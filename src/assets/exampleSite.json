@@ -1,0 +1,35 @@
+{
+  "id": "site1",
+  "name": "Main Site",
+  "widthX": 1000,
+  "widthZ": 1000,
+  "buildings": [
+    {
+      "id": "building1",
+      "name": "Office Block",
+      "originX": 200,
+      "originZ": 200,
+      "widthX": 200,
+      "widthZ": 200,
+      "heightY": 100
+    },
+    {
+      "id": "building2",
+      "name": "Warehouse",
+      "originX": 600,
+      "originZ": 200,
+      "widthX": 300,
+      "widthZ": 500,
+      "heightY": 80
+    },
+    {
+      "id": "building3",
+      "name": "Garage",
+      "originX": 300,
+      "originZ": 600,
+      "widthX": 200,
+      "widthZ": 200,
+      "heightY": 50
+    }
+  ]
+}
