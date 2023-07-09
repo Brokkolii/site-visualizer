@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, tap } from 'rxjs';
+import { Observable, Subject, map, of, tap } from 'rxjs';
 import { Site } from 'src/app/models/site.model';
 import { HttpClient } from '@angular/common/http';
 import { ThreejsService } from '../three-js/three-js.service';
@@ -17,6 +17,20 @@ export class SiteService {
     private threejs: ThreejsService,
     private tween: TweenService
   ) {}
+
+  private currentlyInViewSubject = new Subject<Object3D>();
+  currentlyInView$ = this.currentlyInViewSubject.asObservable();
+  currentlyInViewType$ = this.currentlyInView$.pipe(
+    map((object) => {
+      if (object.userData['type'] === 'building') {
+        return 'building';
+      } else if (object.userData['type'] === 'site') {
+        return 'site';
+      } else {
+        return null;
+      }
+    })
+  );
 
   public getSite(): Observable<Site> {
     return this.http.get<Site>('/assets/exampleSite.json');
@@ -52,7 +66,7 @@ export class SiteService {
     });
   }
 
-  private cameraToDefaultPosition(
+  public cameraToDefaultPosition(
     camera: THREE.PerspectiveCamera,
     scene: THREE.Scene
   ) {
@@ -63,6 +77,14 @@ export class SiteService {
       new THREE.Vector3(0, 0, 0),
       delay
     );
+    //find an child of the scene with type site and store it in a variable called const site
+    const site = scene.children.find((child) => {
+      const object = child as Mesh;
+      return object.userData['type'] === 'site';
+    });
+    if (site) {
+      this.currentlyInViewSubject.next(site);
+    }
     setTimeout(() => {
       this.setOpacityToBuildings(null, scene);
     }, delay);
@@ -90,6 +112,7 @@ export class SiteService {
       targetLookAtPostion,
       delay
     );
+    this.currentlyInViewSubject.next(building);
     setTimeout(() => {
       this.setOpacityToBuildings(building.uuid, scene);
     }, delay);

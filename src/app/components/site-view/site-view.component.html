@@ -1,1 +1,9 @@
-<canvas #canvas></canvas>
+<div>
+  <canvas #canvas></canvas>
+  <button
+    *ngIf="(siteService.currentlyInViewType$ | async) === 'building'"
+    (click)="goBack()"
+  >
+    back
+  </button>
+</div>

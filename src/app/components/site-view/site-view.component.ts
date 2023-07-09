@@ -39,5 +39,15 @@ export class SiteViewComponent implements AfterViewInit {
       );
       this.threejs.animate(this.renderer, this.scene, this.camera);
     });
+
+    this.siteService.currentlyInViewType$.subscribe((object) => {
+      console.log(object);
+    });
+  }
+
+  goBack() {
+    if (this.camera && this.scene) {
+      this.siteService.cameraToDefaultPosition(this.camera, this.scene);
+    }
   }
 }
