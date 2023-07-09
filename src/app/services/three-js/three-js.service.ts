@@ -18,7 +18,7 @@ export class ThreejsService {
     const camera = new THREE.PerspectiveCamera(
       75,
       canvas.clientWidth / canvas.clientHeight,
-      0.1,
+      0.01,
       1000
     );
 
@@ -31,6 +31,7 @@ export class ThreejsService {
     renderer.shadowMap.enabled = true;
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
+    /*
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableRotate = false;
     controls.enableRotate = true;
@@ -43,12 +44,17 @@ export class ThreejsService {
       MIDDLE: THREE.MOUSE.ROTATE,
       RIGHT: THREE.MOUSE.DOLLY,
     };
+    */
+    const controls = new OrbitControls(
+      camera,
+      document.createElement('canvas')
+    );
 
     return { scene, camera, renderer, controls };
   }
 
   addCube(
-    scene: THREE.Scene,
+    parent: THREE.Mesh | THREE.Scene,
     width = 100,
     height = 100,
     depth = 100,
@@ -56,42 +62,25 @@ export class ThreejsService {
     y = 0,
     z = 0,
     color = 'green',
-    id?: string
+    id?: string,
+    type?: string
   ) {
-    // Create a geometry
     const geometry = new THREE.BoxGeometry(width, height, depth);
-
-    // Create a material
     const material = new THREE.MeshPhongMaterial({
       color: color,
     });
 
-    // Create a mesh using the geometry and material
     const cube = new THREE.Mesh(geometry, material);
-    cube.position.x = x;
-    cube.position.y = y;
-    cube.position.z = z;
+    cube.position.set(x, y, z);
 
     cube.castShadow = true;
     cube.receiveShadow = true;
 
-    if (id) {
-      cube.userData = { id: id };
-    }
-
-    //create EdgesGeometry
-    const edges = new THREE.EdgesGeometry(geometry);
-    const line = new THREE.LineSegments(
-      edges,
-      new THREE.LineBasicMaterial({ color: 0xffffff })
-    );
-    line.position.x = x;
-    line.position.y = y;
-    line.position.z = z;
+    cube.userData = { id, type };
 
     // Add the cube to the scene
-    scene.add(cube);
-    scene.add(line);
+    parent.add(cube);
+    return cube;
   }
 
   animate = (
@@ -131,7 +120,7 @@ export class ThreejsService {
   }
 
   createText(
-    scene: THREE.Scene,
+    parent: THREE.Mesh | THREE.Scene,
     text: string,
     pos = [0, 0, 0],
     lookAt = [0, 0, 0]
@@ -157,7 +146,7 @@ export class ThreejsService {
       const textMesh = new THREE.Mesh(geometry, material);
       textMesh.position.set(pos[0], pos[1], pos[2]);
       textMesh.lookAt(lookAt[0], lookAt[1], lookAt[2]);
-      scene.add(textMesh);
+      parent.add(textMesh);
     });
   }
 
@@ -165,7 +154,7 @@ export class ThreejsService {
     renderer: THREE.WebGLRenderer,
     camera: THREE.PerspectiveCamera,
     scene: THREE.Scene,
-    onClick: (intersect: THREE.Intersection) => void
+    onClick: (intersect: THREE.Intersection | null) => void
   ): void {
     // Create a Raycaster instance
     const raycaster = new THREE.Raycaster();
@@ -175,19 +164,32 @@ export class ThreejsService {
     renderer.domElement.addEventListener(
       'click',
       (event) => {
-        // Normalize mouse position to [-1, 1]
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
         // Set the Raycaster to shoot from the camera's position through the mouse's position
         raycaster.setFromCamera(mouse, camera);
 
         // Check for intersection with any object in the scene
-        const intersects = raycaster.intersectObjects(scene.children, true);
+        const intersects = raycaster.intersectObjects(scene.children, false);
+
+        // If no ArrowHelper exists, create one
+        if (false) {
+          const arrowHelper = new THREE.ArrowHelper(
+            raycaster.ray.direction,
+            raycaster.ray.origin,
+            1000,
+            0xff0000
+          );
+          scene.add(arrowHelper);
+        }
 
         // If there's an intersection, execute the callback
         if (intersects.length > 0) {
           onClick(intersects[0]);
+        } else {
+          onClick(null);
         }
       },
       false

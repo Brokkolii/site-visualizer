@@ -5,12 +5,18 @@ import { HttpClient } from '@angular/common/http';
 import { ThreejsService } from '../three-js/three-js.service';
 import { Building } from 'src/app/models/building.model';
 import { Mesh, Object3D } from 'three';
+import { TweenService } from '../tween/tween.service';
+import * as THREE from 'three';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SiteService {
-  constructor(private http: HttpClient, private threejs: ThreejsService) {}
+  constructor(
+    private http: HttpClient,
+    private threejs: ThreejsService,
+    private tween: TweenService
+  ) {}
 
   public getSite(): Observable<Site> {
     return this.http.get<Site>('/assets/exampleSite.json');
@@ -25,7 +31,7 @@ export class SiteService {
     this.threejs.createHemisphereLight(scene);
     this.threejs.createDaylight(scene);
     this.displaySite(site, scene);
-    this.cameraToDefaultPosition(camera);
+    this.cameraToDefaultPosition(camera, scene);
     this.addClickEventToBuildings(renderer, scene, camera);
   }
 
@@ -35,34 +41,88 @@ export class SiteService {
     camera: THREE.PerspectiveCamera
   ) {
     this.threejs.addClickListener(renderer, camera, scene, (intersect) => {
-      console.log(intersect);
-      console.log(intersect.object.userData['id']);
-      const object = intersect.object;
-      this.zoomToBuilding(object, camera);
+      if (intersect) {
+        const object = intersect.object;
+        if (object.userData['type'] === 'building') {
+          this.zoomToBuilding(object, camera, scene);
+        }
+      } else {
+        this.cameraToDefaultPosition(camera, scene);
+      }
     });
   }
 
-  private cameraToDefaultPosition(camera: THREE.PerspectiveCamera) {
-    camera.position.set(0, 70, 0);
-    camera.lookAt(0, 0, 0);
+  private cameraToDefaultPosition(
+    camera: THREE.PerspectiveCamera,
+    scene: THREE.Scene
+  ) {
+    const delay = 700;
+    this.tween.animateCameraToPosition(
+      camera,
+      new THREE.Vector3(0, 70, 0),
+      new THREE.Vector3(0, 0, 0),
+      delay
+    );
+    setTimeout(() => {
+      this.setOpacityToBuildings(null, scene);
+    }, delay);
   }
 
-  private zoomToBuilding(building: Object3D, camera: THREE.PerspectiveCamera) {
-    console.log(building);
-    camera.position.set(
-      building.position.x + 5,
+  private zoomToBuilding(
+    building: Object3D,
+    camera: THREE.PerspectiveCamera,
+    scene: THREE.Scene
+  ) {
+    const delay = 700;
+    const targetPosition = new THREE.Vector3(
+      building.position.x,
       building.position.y + 10,
       building.position.z + 20
     );
-    camera.lookAt(
+    const targetLookAtPostion = new THREE.Vector3(
       building.position.x,
       building.position.y,
       building.position.z
     );
+    this.tween.animateCameraToPosition(
+      camera,
+      targetPosition,
+      targetLookAtPostion,
+      delay
+    );
+    setTimeout(() => {
+      this.setOpacityToBuildings(building.uuid, scene);
+    }, delay);
+  }
+
+  private setOpacityToBuildings(targetUuid: string | null, scene: THREE.Scene) {
+    scene.children.forEach((child) => {
+      const object = child as Mesh;
+      if (object.userData['type'] === 'building') {
+        const opacity = object.uuid !== targetUuid ? 1 : 0.1;
+
+        //set opacity
+        const material = object.material as THREE.MeshPhongMaterial;
+        if (material.opacity !== opacity) {
+          material.transparent = true;
+          material.opacity = opacity;
+          material.needsUpdate = true;
+        }
+        object.children.forEach((child) => {
+          const childObject = child as Mesh;
+          const childMaterial = childObject.material as THREE.MeshPhongMaterial;
+          if (childMaterial.opacity !== opacity) {
+            childMaterial.transparent = true;
+            childMaterial.opacity = opacity;
+            childMaterial.needsUpdate = true;
+          }
+        });
+      }
+    });
   }
 
   private displaySite(site: Site, scene: THREE.Scene) {
-    this.threejs.addCube(
+    const siteMesh = this.threejs.addCube(
       scene,
       site.widthX,
       1,
@@ -71,14 +131,15 @@ export class SiteService {
       0,
       0,
       '#6F6F6F',
-      site.id
+      site.id,
+      'site'
     );
 
     site.buildings.forEach((building) => this.displayBuilding(building, scene));
   }
 
   private displayBuilding(building: Building, scene: THREE.Scene) {
-    this.threejs.addCube(
+    const buildingMesh = this.threejs.addCube(
       scene,
       building.widthX,
       building.heightY,
@@ -87,24 +148,25 @@ export class SiteService {
       building.heightY / 2,
       building.originZ,
       '#0166B1',
-      building.id
+      building.id,
+      'building'
     );
-    this.displayBuildingName(building, scene);
+    this.displayBuildingName(building, buildingMesh);
   }
 
-  private displayBuildingName(building: Building, scene: THREE.Scene) {
+  private displayBuildingName(building: Building, buildingMesh: THREE.Mesh) {
     this.threejs.createText(
-      scene,
+      buildingMesh,
       building.name,
       [
-        building.originX - building.widthX / 2 + 1,
-        building.heightY - 1.9,
-        building.originZ + building.widthZ / 2 - 1,
+        (building.widthX / 2) * -1 + 1,
+        building.heightY / 2 - 1.9,
+        building.widthZ / 2 - 1,
       ],
       [
-        building.originX - building.widthX / 2 + 1,
-        building.heightY - +1,
-        building.originZ + building.widthZ / 2 - 1,
+        (building.widthX / 2) * -1 + 1,
+        building.heightY / 2 - 1.9 + 10,
+        building.widthZ / 2 - 1,
       ]
     );
   }
