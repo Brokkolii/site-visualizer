@@ -9,9 +9,7 @@ import { HttpClient } from '@angular/common/http';
 export class SiteService {
   constructor(private http: HttpClient) {}
 
-  getSite(): Observable<Site> {
-    return this.http
-      .get<Site>('/assets/exampleSite.json')
-      .pipe(tap((site) => console.log(site)));
+  public getSite(): Observable<Site> {
+    return this.http.get<Site>('/assets/exampleSite.json');
   }
 }
