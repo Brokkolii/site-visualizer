@@ -31,7 +31,12 @@ export class SiteViewComponent implements AfterViewInit {
         renderer: this.renderer,
         controls: this.controls,
       } = this.threejs.createScene(this.canvasRef.nativeElement));
-      this.siteService.loadSiteToScene(site, this.scene);
+      this.siteService.loadSiteToScene(
+        site,
+        this.scene,
+        this.camera,
+        this.renderer
+      );
       this.threejs.animate(this.renderer, this.scene, this.camera);
     });
   }

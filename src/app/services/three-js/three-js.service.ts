@@ -21,9 +21,6 @@ export class ThreejsService {
       0.1,
       1000
     );
-    camera.position.set(0, 70, 0);
-    //camera.position.set(-50, 50, 50);
-    camera.lookAt(0, 0, 0);
 
     // Create a WebGLRenderer and set its width and height
     const renderer = new THREE.WebGLRenderer({
@@ -58,7 +55,8 @@ export class ThreejsService {
     x = 0,
     y = 0,
     z = 0,
-    color = 'green'
+    color = 'green',
+    id?: string
   ) {
     // Create a geometry
     const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -76,6 +74,10 @@ export class ThreejsService {
 
     cube.castShadow = true;
     cube.receiveShadow = true;
+
+    if (id) {
+      cube.userData = { id: id };
+    }
 
     //create EdgesGeometry
     const edges = new THREE.EdgesGeometry(geometry);
@@ -157,5 +159,38 @@ export class ThreejsService {
       textMesh.lookAt(lookAt[0], lookAt[1], lookAt[2]);
       scene.add(textMesh);
     });
+  }
+
+  addClickListener(
+    renderer: THREE.WebGLRenderer,
+    camera: THREE.PerspectiveCamera,
+    scene: THREE.Scene,
+    onClick: (intersect: THREE.Intersection) => void
+  ): void {
+    // Create a Raycaster instance
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // Listen for click events
+    renderer.domElement.addEventListener(
+      'click',
+      (event) => {
+        // Normalize mouse position to [-1, 1]
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        // Set the Raycaster to shoot from the camera's position through the mouse's position
+        raycaster.setFromCamera(mouse, camera);
+
+        // Check for intersection with any object in the scene
+        const intersects = raycaster.intersectObjects(scene.children, true);
+
+        // If there's an intersection, execute the callback
+        if (intersects.length > 0) {
+          onClick(intersects[0]);
+        }
+      },
+      false
+    );
   }
 }
