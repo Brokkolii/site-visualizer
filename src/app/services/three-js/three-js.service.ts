@@ -8,55 +8,50 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
   providedIn: 'root',
 })
 export class ThreejsService {
-  scene: THREE.Scene = new THREE.Scene();
-  camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
-  renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer();
-  controls: OrbitControls = new OrbitControls(
-    this.camera,
-    this.renderer.domElement
-  );
-
   constructor() {}
 
   createScene(canvas: HTMLCanvasElement) {
     // Create a scene
-    this.scene = new THREE.Scene();
+    const scene = new THREE.Scene();
 
     // Create a camera
-    this.camera = new THREE.PerspectiveCamera(
+    const camera = new THREE.PerspectiveCamera(
       75,
       canvas.clientWidth / canvas.clientHeight,
       0.1,
       1000
     );
-    this.camera.position.set(0, 70, 0);
-    //this.camera.position.set(-50, 50, 50);
-    this.camera.lookAt(0, 0, 0);
+    camera.position.set(0, 70, 0);
+    //camera.position.set(-50, 50, 50);
+    camera.lookAt(0, 0, 0);
 
     // Create a WebGLRenderer and set its width and height
-    this.renderer = new THREE.WebGLRenderer({
+    const renderer = new THREE.WebGLRenderer({
       canvas: canvas,
       alpha: true,
     });
-    this.renderer.setClearColor('#FFFFFF', 0);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setClearColor('#FFFFFF', 0);
+    renderer.shadowMap.enabled = true;
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableRotate = false;
-    this.controls.enableRotate = true;
-    //this.controls.enableZoom = true;
-    this.controls.enablePan = true;
-    //this.controls.maxPolarAngle = 0;
-    //this.controls.minPolarAngle = 0;
-    this.controls.mouseButtons = {
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableRotate = false;
+    controls.enableRotate = true;
+    //controls.enableZoom = true;
+    controls.enablePan = true;
+    //controls.maxPolarAngle = 0;
+    //controls.minPolarAngle = 0;
+    controls.mouseButtons = {
       LEFT: THREE.MOUSE.PAN,
       MIDDLE: THREE.MOUSE.ROTATE,
       RIGHT: THREE.MOUSE.DOLLY,
     };
+
+    return { scene, camera, renderer, controls };
   }
 
   addCube(
+    scene: THREE.Scene,
     width = 100,
     height = 100,
     depth = 100,
@@ -93,24 +88,26 @@ export class ThreejsService {
     line.position.z = z;
 
     // Add the cube to the scene
-    this.scene.add(cube);
-    this.scene.add(line);
+    scene.add(cube);
+    scene.add(line);
   }
 
-  animate() {
-    // Create the animation loop
-    requestAnimationFrame(this.animate.bind(this));
-    // Render the scene with the camera
-    this.renderer.render(this.scene, this.camera);
-  }
+  animate = (
+    renderer: THREE.WebGLRenderer,
+    scene: THREE.Scene,
+    camera: THREE.Camera
+  ) => {
+    requestAnimationFrame(() => this.animate(renderer, scene, camera));
+    renderer.render(scene, camera);
+  };
 
-  createHemisphereLight() {
+  createHemisphereLight(scene: THREE.Scene) {
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x0000ff, 1);
     hemiLight.position.set(0, 50, 0);
-    this.scene.add(hemiLight);
+    scene.add(hemiLight);
   }
 
-  createDaylight() {
+  createDaylight(scene: THREE.Scene) {
     const dirLight = new THREE.DirectionalLight(0xffccaa, 1.5);
     dirLight.position.set(25, 50, 50);
     dirLight.target.position.set(0, 0, 0);
@@ -128,13 +125,16 @@ export class ThreejsService {
     dirLight.shadow.bias = -0.0001; // Prevents shadow acne
     dirLight.shadow.radius = 3; // Makes the edges of the shadow softer
 
-    this.scene.add(dirLight);
+    scene.add(dirLight);
   }
 
-  createText(text: string, x = 0, y = 0, z = 0) {
+  createText(
+    scene: THREE.Scene,
+    text: string,
+    pos = [0, 0, 0],
+    lookAt = [0, 0, 0]
+  ) {
     const loader = new FontLoader();
-    const scene = this.scene;
-    const camera = this.camera;
 
     loader.load('assets/Roboto_Regular.json', function (font) {
       const geometry = new TextGeometry(text, {
@@ -153,10 +153,8 @@ export class ThreejsService {
 
       // Create a mesh using the geometry and material
       const textMesh = new THREE.Mesh(geometry, material);
-      textMesh.position.x = x;
-      textMesh.position.y = y;
-      textMesh.position.z = z;
-      textMesh.lookAt(x, y + 100, z);
+      textMesh.position.set(pos[0], pos[1], pos[2]);
+      textMesh.lookAt(lookAt[0], lookAt[1], lookAt[2]);
       scene.add(textMesh);
     });
   }

@@ -3,6 +3,7 @@ import { Building } from 'src/app/models/building.model';
 import { Site } from 'src/app/models/site.model';
 import { SiteService } from 'src/app/services/site/site.service';
 import { ThreejsService } from 'src/app/services/three-js/three-js.service';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 @Component({
   selector: 'app-site-view',
@@ -17,40 +18,21 @@ export class SiteViewComponent implements AfterViewInit {
 
   @ViewChild('canvas') canvasRef: any;
 
-  ngOnInit(): void {
-    this.siteService.getSite().subscribe((site) => {
-      this.displaySite(site);
-    });
-  }
+  scene?: THREE.Scene;
+  camera?: THREE.PerspectiveCamera;
+  renderer?: THREE.WebGLRenderer;
+  controls?: OrbitControls;
 
   ngAfterViewInit(): void {
-    this.threejs.createScene(this.canvasRef.nativeElement);
-    this.threejs.createHemisphereLight();
-    this.threejs.animate();
-  }
-
-  displaySite(site: Site) {
-    this.threejs.addCube(site.widthX, 1, site.widthZ, 0, 0, 0, '#6F6F6F');
-    site.buildings.forEach((building) => this.displayBuilding(building));
-    this.threejs.createDaylight();
-  }
-
-  displayBuilding(building: Building) {
-    this.threejs.addCube(
-      building.widthX,
-      building.heightY,
-      building.widthZ,
-      building.originX,
-      building.heightY / 2,
-      building.originZ,
-      '#0166B1'
-    );
-
-    this.threejs.createText(
-      building.name,
-      building.originX - building.widthX / 2 + 1,
-      building.heightY - 1.9,
-      building.originZ + building.widthZ / 2 - 1
-    );
+    this.siteService.getSite().subscribe((site) => {
+      ({
+        scene: this.scene,
+        camera: this.camera,
+        renderer: this.renderer,
+        controls: this.controls,
+      } = this.threejs.createScene(this.canvasRef.nativeElement));
+      this.siteService.loadSiteToScene(site, this.scene);
+      this.threejs.animate(this.renderer, this.scene, this.camera);
+    });
   }
 }
