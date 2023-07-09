@@ -1,35 +1,35 @@
 {
   "id": "site1",
   "name": "Main Site",
-  "widthX": 1000,
-  "widthZ": 1000,
+  "widthX": 100,
+  "widthZ": 100,
   "buildings": [
     {
       "id": "building1",
       "name": "Office Block",
-      "originX": 200,
-      "originZ": 200,
-      "widthX": 200,
-      "widthZ": 200,
-      "heightY": 100
+      "originX": 20,
+      "originZ": 20,
+      "widthX": 20,
+      "widthZ": 20,
+      "heightY": 10
     },
     {
       "id": "building2",
       "name": "Warehouse",
-      "originX": 600,
-      "originZ": 200,
-      "widthX": 300,
-      "widthZ": 500,
-      "heightY": 80
+      "originX": -20,
+      "originZ": -15,
+      "widthX": 30,
+      "widthZ": 20,
+      "heightY": 8
     },
     {
       "id": "building3",
       "name": "Garage",
-      "originX": 300,
-      "originZ": 600,
-      "widthX": 200,
-      "widthZ": 200,
-      "heightY": 50
+      "originX": 20,
+      "originZ": -20,
+      "widthX": 20,
+      "widthZ": 20,
+      "heightY": 5
     }
   ]
 }
